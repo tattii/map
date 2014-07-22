@@ -16,7 +16,10 @@
 
 		<script>
 			var map_id = 'tattii.j1a9fl0a';
-			var mapboxTiles = L.tileLayer('https://{s}.tiles.mapbox.com/v3/' + map_id + '/{z}/{x}/{y}.png');
+			var mapboxTiles = L.tileLayer(
+				'https://{s}.tiles.mapbox.com/v3/' + map_id + '/{z}/{x}/{y}.png',
+				{ attribution: '<a href="http://www.mapbox.com/about/maps/" target="_blank">Mapbox</a>' }
+			);
 
 			var map = L.map('map')
 				.addLayer(mapboxTiles)
