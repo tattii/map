@@ -10,7 +10,7 @@ var UTM = function() {
 	var a = 6378137.0,			// 長半径(WGS84)
 		f = 1 / 298.257223563,	// 扁平率(WGS84)
 		k = 0.9996;				// 縮尺係数
-	var datum=(52*6-183)/180*Math.PI , hemi=1;			// 基準経度, N/S
+	var datum=(-45)/180*Math.PI , hemi=-1;			// 基準経度, N/S
 
 	// Preliminary values
 	var n = f / (2-f);
@@ -61,7 +61,7 @@ var UTM = function() {
 			return alpha[j-1] * Math.sin(2*j*xi) * _cosh(2*j*eta);
 		}));
 
-		return { x: x, y: y };
+		return { x:x, y:y };
 	} 
 
 

@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset=utf-8 />
+		<title>UTM Map - Rio Claro</title>
+		<meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+		<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.5.1/leaflet.css" />
+		<style>
+			body { margin:0; padding:0; }
+			#map { position:absolute; top:0; bottom:0; width:100%; cursor: crosshair; }
+		</style>
+	</head>
+
+	<body>
+		<div id='map'></div>
+
+		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script>
+		<script src="http://cdn.leafletjs.com/leaflet-0.5.1/leaflet.js"></script>
+		<script src="/map/lib/L.TileLayer.Zoomify.js"></script> 
+		<script src="../utm_leaflet/LUTM.js"></script>
+		<script src="/map/utm/converter/utm.js"></script>
+		<script>
+
+		$(function(){
+			var map = L.map('map', { crs: L.CRS.Simple } ).setView(new L.LatLng(0,0), 0);
+
+			L.tileLayer.zoomify('../rio_claro/map_rio_claro/', { 
+					width: 9674, 
+					height: 12957,
+					tolerance: 0.8,
+					attribution: '<a href="http://www.balloonworlds2014.com/" target="_blank">BALLOON WORLDS 2014</a>'
+			}).addTo(map);
+
+			map.setView([-95.5, 86.79], 4);
+
+			var lutm = new LUTM;
+			lutm.setProjection(
+				{x:214000 , y:7540000 , lat:-11.58 , lng:4.75 },
+				{x:252000 , y:7496000 , lat:-173.95 , lng:145 }
+			);
+
+			var utm = new UTM;
+
+			function _coordToLatLng(lat, lng){
+				var u = utm.latlngToUTM(lat, lng);
+				return lutm.projectToLatLng(u.x, u.y);
+			}
+
+			L.marker( lutm.projectToLatLng(236253, 7517606) ).addTo(map);
+
+
+			//-----------------------------------------------------------------
+
+			function drawPath() {
+				_drawPath(log["U.Sat"], "#00BFFF");
+				_drawPath(log.Uvv, "#2aff00");
+			}
+
+
+			function _drawPath(log_list, color, weight) {
+				var point = [];
+
+				for (var i = 0; i < log_list.length; i++){
+					var p = _coordToLatLng(log_list[i].lat, log_list[i].lng)
+					point.push( new L.LatLng(p[0], p[1]) );
+				}
+
+				var path = new L.polyline(
+					point,
+					{
+						color: color,
+						weight: weight || 5,
+						opacity: 1,
+					}
+				).addTo(map);
+
+				return path;
+			}
+
+
+
+
+
+
+
+			//-----------------------------------------------------------------
+			var log = [], lastPos = 0;
+
+			$.ajax({
+				url: "20140722am.txt",
+				dataType: "text"
+			}).done(function(file) {
+				parseGV(file);	
+			}).fail(function() {
+				alert("ajax faild");
+			});
+
+
+
+			//-----------------------------------------------------------------
+			function parseGV(file) {
+				var data = file.split("\n");
+				var status = parseInt(data[0]);
+				lastPos = parseInt(data[1]);
+
+				for (var i = 2; i < data.length; i++ ){
+					if ( data[i].match(/MARK/) ){
+						
+					}else if ( data[i].match(/\$GP/) ){
+						var parsed = {};
+						var res = parsePositionData(data[i]);
+						parsed[res.format] = res;
+
+						if ( i+1 < data.length ){
+							if (! data[i+1].match(/MARK/) ){
+								res = parsePositionData(data[i+1]);
+								i++;
+								parsed[res.format] = res;
+							}
+						}
+
+						if ( parsed.RMC && parsed.GGA && parsed.RMC.id && parsed.RMC.id == parsed.GGA.id ){
+							if ( log[parsed.RMC.id] == undefined ){
+								log[parsed.RMC.id] = [];
+							}
+							log[parsed.RMC.id].push({
+								time: parsed.RMC.time,
+								lat: parsed.RMC.lat,
+								lng: parsed.RMC.lng,
+								speed: parsed.RMC.speed,
+								direction: parsed.RMC.direction,
+								altitude: parsed.GGA.altitude
+							});
+						}
+					}
+				}
+				console.log(log);
+				drawPath();
+			}
+
+
+			// RMC: time, status, lat, N/S, lng, E/W, speed, direction, date, ...
+			// GGA: time, lat, N/S, lng, E/W, quality, satellite, HDOP, altitude, ...
+			function parsePositionData(line) {
+				line.match(/([\w\.]+)\s+(\d+)\s\$GP(.{3}),(.+)/);
+				var id = RegExp.$1;
+				// var pos = RegExp.$2;
+				var format = RegExp.$3;
+				var data = RegExp.$4.split(",");
+
+				if ( format == "RMC" ){
+					if ( data[1] == "V" ){
+						return { format: "RMC" };
+					}else{
+						return {
+							id: id,
+							format: "RMC",
+							time: data[0],
+							lat: _degree(data[2]) * ((data[3]=="N") ? 1 : -1),
+							lng: _degree(data[4]) * ((data[5]=="E") ? 1 : -1),
+							speed: parseFloat(data[6]) * 0.514,  // (m/s)
+							direction: parseFloat(data[7])
+						};
+					}
+				}else if ( format == "GGA" ){
+					if ( data[5] == "0" ){
+						return { format: "GGA" };
+					}else{
+						return {
+							id: id,
+							format: "GGA",
+							time: data[0],
+							lat: _degree(data[1]) * ((data[2]=="N") ? 1 : -1),
+							lng: _degree(data[3]) * ((data[4]=="E") ? 1 : -1),
+							altitude: parseFloat(data[8])
+						};
+					}
+				}
+			}
+
+			function _degree(degree){
+				degree.match(/(\d+)(\d{2}\.\d+)/);
+				var d = parseInt(RegExp.$1);
+				var m = parseFloat(RegExp.$2);
+				return d + m /60;
+			}
+
+
+
+
+
+
+
+			// for debug
+			map.on("dragend", map_changed); 
+			map.on("moveend", map_changed); 
+			
+			function map_changed() {
+				console.log(map.getCenter());
+				console.log(map.getZoom());
+			}
+		});
+		</script>
+	</body>
+</html>

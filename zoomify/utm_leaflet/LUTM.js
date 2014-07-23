@@ -20,18 +20,14 @@ var LUTM = function (){
 		d = p1.y - a*p1.lat;
 	}
 
+	// [ x, y ]
 	function projectToUTM (lat, lng){
-		return {
-			x: a*lng + b,
-			y: c*lat + d
-		};
+		return [ a*lng + b, c*lat + d ];
 	}
 
+	// [ lat, lng ]
 	function projectToLatLng (x, y){
-		return {
-			lat: (y-d) / c,
-			lng: (x-b) / a
-		};
+		return [ (y-d) / c, (x-b) / a ];
 	}
 
 
