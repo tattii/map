@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset=utf-8 />
+		<title>UTM Map - Rio Claro</title>
+		<meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+		<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.5.1/leaflet.css" />
+		<style>
+			body { margin:0; padding:0; }
+			#map { position:absolute; top:0; bottom:0; width:100%; cursor: crosshair; }
+		</style>
+	</head>
+
+	<body>
+		<div id='map'></div>
+		<script src="http://cdn.leafletjs.com/leaflet-0.5.1/leaflet.js"></script>
+		<script src="/map/lib/L.TileLayer.Zoomify.js"></script> 
+		<script src="LUTM.js"></script>
+		<script>
+
+			var map = L.map('map', { crs: L.CRS.Simple } ).setView(new L.LatLng(0,0), 0);
+
+
+			L.tileLayer.zoomify('../rio_claro/map_rio_claro/', { 
+					width: 9674, 
+					height: 12957,
+					tolerance: 0.8,
+					attribution: '<a href="http://www.balloonworlds2014.com/" target="_blank">BALLOON WORLDS 2014</a>'
+			}).addTo(map);
+
+			map.setView(new L.LatLng(0,0), 4);
+
+			L.marker([-11.58,4.75],
+				{draggable: true}
+				).addTo(map);
+
+			L.marker([-173.95, 145]).addTo(map);
+			L.marker([-173.95, 4.75]).addTo(map);
+
+
+			var lutm = new LUTM;
+			lutm.setProjection(
+				{x:214000 , y:7540000 , lat:-11.58 , lng:4.75 },
+				{x:252000 , y:7496000 , lat:-173.95 , lng:145 }
+			);
+
+
+			console.log( lutm.projectToUTM(-11.58, 4.75) ); 
+			console.log( lutm.projectToUTM(-173.95, 145) ); 
+
+			// for debug
+			map.on("dragend", map_changed); 
+			map.on("moveend", map_changed); 
+			
+			function map_changed(){
+				console.log(map.getCenter());
+				console.log(map.getZoom());
+				console.log(map.getBounds());
+				console.log(map.getPixelBounds());
+				console.log(map.getPixelOrigin());
+			}
+
+		</script>
+	</body>
+</html>
