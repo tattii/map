@@ -8,16 +8,22 @@
 		<style>
 			body { margin:0; padding:0; }
 			#map { position:absolute; top:0; bottom:0; width:100%; cursor: crosshair; }
+			#console { position:absolute; bottom:0; left:0; z-index:1000; width:150px; height:20px; background:rgba(255, 255, 255, 0.8);  } 
 		</style>
 	</head>
 
 	<body>
-		<div id='map'></div>
+		<div id='map'>
+			<div id="console"></div>
+		</div>
+		
+		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script>
 		<script src="http://cdn.leafletjs.com/leaflet-0.5.1/leaflet.js"></script>
 		<script src="/map/lib/L.TileLayer.Zoomify.js"></script> 
 		<script src="LUTM.js"></script>
 		<script>
 
+		$(function(){
 			var map = L.map('map', { crs: L.CRS.Simple } ).setView(new L.LatLng(0,0), 0);
 
 
@@ -28,12 +34,10 @@
 					attribution: '<a href="http://www.balloonworlds2014.com/" target="_blank">BALLOON WORLDS 2014</a>'
 			}).addTo(map);
 
-			map.setView(new L.LatLng(0,0), 4);
+			map.setView(new L.LatLng(-80,80), 2);
 
-			L.marker([-11.58,4.75],
-				{draggable: true}
-				).addTo(map);
 
+			L.marker([-11.58,4.75], {draggable: true}).addTo(map);
 			L.marker([-173.95, 145]).addTo(map);
 			L.marker([-173.95, 4.75]).addTo(map);
 
@@ -48,6 +52,13 @@
 			console.log( lutm.projectToUTM(-11.58, 4.75) ); 
 			console.log( lutm.projectToUTM(-173.95, 145) ); 
 
+
+			map.on("mousemove", function(e) {
+				var u = lutm.projectToUTM(e.latlng.lat, e.latlng.lng);
+				$("#console").text(Math.round(u[0]) +"/"+ Math.round(u[1]));
+			});
+
+
 			// for debug
 			map.on("dragend", map_changed); 
 			map.on("moveend", map_changed); 
@@ -59,7 +70,7 @@
 				console.log(map.getPixelBounds());
 				console.log(map.getPixelOrigin());
 			}
-
+		});
 		</script>
 	</body>
 </html>
