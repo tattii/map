@@ -8,7 +8,7 @@
 		<style>
 			body { margin:0; padding:0; }
 			#map { position:absolute; top:0; bottom:0; width:100%; cursor: crosshair; }
-			#console { position:absolute; bottom:0; left:0; z-index:1000; width:150px; height:20px; background:rgba(255, 255, 255, 0.8);  } 
+			#console { position:absolute; bottom:0; left:0; z-index:1000; width:150px; height:20px; background:rgba(255, 255, 255, 0.8); }
 		</style>
 	</head>
 
@@ -55,7 +55,13 @@
 
 			map.on("mousemove", function(e) {
 				var u = lutm.projectToUTM(e.latlng.lat, e.latlng.lng);
-				$("#console").text(Math.round(u[0]) +"/"+ Math.round(u[1]));
+				var x = Math.round(u[0]).toString().split("");
+				var y = Math.round(u[1]).toString().split("");
+				$("#console").html(
+					x[0] + "<strong>" + x[1]+x[2]+x[3]+x[4] + "</strong>" + x[5] +
+					"/" +
+					y[0]+y[1] + "<strong>" + y[2]+y[3]+y[4]+y[5] + "</strong>" + y[6] 
+				);
 			});
 
 
