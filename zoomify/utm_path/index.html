@@ -87,7 +87,7 @@
 			var log = [], lastPos = 0;
 
 			$.ajax({
-				url: "/proxy/sr.cgi",
+				url: "20140722am.txt",
 				dataType: "text"
 			}).done(function(file) {
 				parseGV(file);	
@@ -111,10 +111,12 @@
 						var res = parsePositionData(data[i]);
 						parsed[res.format] = res;
 
-						if ( i+1 < data.length ){
+						if ( data[i+1] ){
 							if (! data[i+1].match(/MARK/) ){
+console.log(data[i+1]);
 								res = parsePositionData(data[i+1]);
 								i++;
+console.log(res);
 								parsed[res.format] = res;
 							}
 						}
