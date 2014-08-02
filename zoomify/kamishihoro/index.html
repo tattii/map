@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset=utf-8 />
+		<title>Map - 上士幌</title>
+		<meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+		<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.5.1/leaflet.css" />
+		<style>
+			body { margin:0; padding:0; }
+			#map { position:absolute; top:0; bottom:0; width:100%; cursor: crosshair; }
+		</style>
+	</head>
+
+	<body>
+		<div id='map'></div>
+		<script src="http://cdn.leafletjs.com/leaflet-0.5.1/leaflet.js"></script>
+		<script src="/map/lib/L.TileLayer.Zoomify.js"></script>  
+		<script>
+
+			var map = L.map('map', { crs: L.CRS.Simple } ).setView(new L.LatLng(0,0), 0);
+
+
+			L.tileLayer.zoomify('map_kamishihoro5/', { 
+					width: 9934, 
+					height: 14044,
+					tolerance: 0.8,
+					attribution: '<a href="http://www.kamishihoro.jp/sp/balloonfestival" target="_blank">北海道バルーンフェスティバル</a>'
+			}).addTo(map);
+
+			map.setView([-110, 80], 4);
+
+			map.on("dragend", map_changed); 
+			map.on("moveend", map_changed); 
+			
+			function map_changed(){
+				console.log(map.getCenter());
+				console.log(map.getZoom());
+			}
+
+		</script>
+	</body>
+</html>
