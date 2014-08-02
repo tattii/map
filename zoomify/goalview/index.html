@@ -54,6 +54,9 @@
 			function drawPath() {
 				_drawPath(log["U.Sat"], "#00BFFF");
 				_drawPath(log.Uvv, "#2aff00");
+
+
+				L.marker( _coordToLatLng(log["U.Sat"][ log["U.Sat"].length-1 ]) ).addTo(map);
 			}
 
 
@@ -86,19 +89,24 @@
 			//-----------------------------------------------------------------
 			var log = [], lastPos = 0;
 
-			$.ajax({
-				url: "20140722am.txt",
-				dataType: "text"
-			}).done(function(file) {
-				parseGV(file);	
-			}).fail(function() {
-				alert("ajax faild");
-			});
+			ajax();
+			setInterval(ajax, 5000);
 
+			function ajax(){
+				$.ajax({
+					url: "/proxy/sr.cgi",
+					dataType: "text"
+				}).done(function(file) {
+					parseGV(file);	
+				}).fail(function() {
+					alert("ajax faild");
+				});
+			}
 
 
 			//-----------------------------------------------------------------
 			function parseGV(file) {
+				log = [];
 				var data = file.split("\n");
 				var status = parseInt(data[0]);
 				lastPos = parseInt(data[1]);
@@ -113,10 +121,8 @@
 
 						if ( data[i+1] ){
 							if (! data[i+1].match(/MARK/) ){
-console.log(data[i+1]);
 								res = parsePositionData(data[i+1]);
 								i++;
-console.log(res);
 								parsed[res.format] = res;
 							}
 						}
@@ -187,20 +193,6 @@ console.log(res);
 				return d + m /60;
 			}
 
-
-
-
-
-
-
-			// for debug
-			map.on("dragend", map_changed); 
-			map.on("moveend", map_changed); 
-			
-			function map_changed() {
-				console.log(map.getCenter());
-				console.log(map.getZoom());
-			}
 		});
 		</script>
 	</body>
