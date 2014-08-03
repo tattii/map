@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Leaflet Googlemap</title>
+		<meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+		<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.6.3/leaflet.css" />
+		<style>
+			body { margin:0; padding:0; }
+			#map { position:absolute; top:0; bottom:0; width:100%;  }
+			#location { position:absolute; width:100px; height:27px; top:10px; right:10px; z-index:1000; background:#1284ff; text-align:center; }
+			#log { position:absolute; width:200px; height:100%; top:0; right:0; z-index:999; overflow: scroll;}
+		</style>
+	</head>
+	<body>
+		<div id="map"></div>
+
+		<div id="location">start</div>
+		<div id="log"></div>
+
+
+		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+		<script src="http://cdn.leafletjs.com/leaflet-0.6.3/leaflet.js"></script>
+		<script>
+		$(function(){
+			var map = new L.Map('map', {center: new L.LatLng(51.51, -0.11), zoom: 9});
+
+			var google = L.tileLayer(
+				'http://mt{s}.google.com/vt/lyrs=m@121&hl=ja&x={x}&y={y}&z={z}',
+				{ subdomains: [0,1,2,3] }
+			).addTo(map);
+
+
+
+
+			// getlocation ----------------------------------------------------
+			var useCompass = L.Browser.mobileWebkit;
+			var watchID;
+			var marker;
+
+			$("#location").click(function(){
+				if (navigator.geolocation) {
+					// stop
+					if ( watchID ){
+						$("#location").css("background", "#1284ff");
+						$("#location").text("start");
+						navigator.geolocation.clearWatch(watchID);
+						watchID = undefined;
+						if ( useCompass ){
+							window.ondeviceorientation = undefined;
+						}
+						$("#log").prepend("<p>....Stoped</p>");
+
+					// start
+					}else{
+						$("#location").css("background", "#90ee90");
+						$("#location").text("stop");
+						watchID = navigator.geolocation.watchPosition(
+							success,
+							error,
+							{
+								enableHighAccuracy: true, 
+								maximumAge        : 30000, 
+						    	timeout           : 27000
+							}
+						);
+						if ( useCompass ){
+							window.ondeviceorientation = getHeading;
+						}
+						$("#log").prepend("<p>Locating.....</p>");
+					}
+
+				} else {
+					alert("cannot get location");
+				}
+			});
+
+
+			function success(position) {
+				console.log(position);
+				var lat = position.coords.latitude;
+				var lng = position.coords.longitude;
+
+				$("#log").prepend("<p>"+lat+", "+lng+"</p>");
+
+				if ( marker ){
+					marker.setLatLng([lat,lng]);
+
+				}else{
+				//initialize marker
+					if ( useCompass ){
+						marker = L.marker([lat, lng], {icon: arrow});
+					}else{
+						marker = L.marker([lat, lng], {icon: point});
+					}
+					marker.addTo(map);
+					map.panTo([lat,lng]);
+				}
+			}
+
+			function error(m){
+				console.log(m);
+			}
+
+
+			function getHeading(compass) {
+				var heading = compass.webkitCompassHeading;
+				$("#arrow").attr("transform", "rotate("+heading+", 20, 20)");
+
+				$("#log").prepend("<p>"+heading+"</p>");
+			}
+
+
+
+			// icon -----------------------------------------------------------
+			var arrow = L.divIcon({
+				className: "arrow",
+				iconSize: [40, 40],
+				iconAnchor: [20, 20],
+				html: '<svg width="40" height="40">' +
+						'<g id="arrow">' +
+							'<g transform="scale(0.625)">' +
+								'<circle cx="32" cy="32" r="12" stroke="#4591c5" fill="#1faee3" stroke-width="1"/>' +
+								'<path d="M 22 21 A 14 14 90 0 1 42 21 L 32 0 Z" fill="#1faee3" stroke-width="0"/>' +
+						'</g></g>' +
+					'</svg>'
+			});
+
+
+			var point = L.divIcon({
+				className: "arrow",
+				iconSize: [40, 40],
+				iconAnchor: [20, 20],
+				html: '<svg width="40" height="40">' +
+						'<g transform="scale(0.625)">' +
+								'<circle cx="32" cy="32" r="12" stroke="#4591c5" fill="#1faee3" stroke-width="1"/>' +
+						'</g>' +
+					'</svg>'
+			});
+
+
+		});
+		</script>
+	</body>
+</html>
