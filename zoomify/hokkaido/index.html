@@ -5,7 +5,7 @@
 	<title>Map - 上士幌</title>
 	<meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
 	<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.5.1/leaflet.css" />
-	<link rel="stylesheet" href="/map/lib/uikit-2.8.0/css/uikit.almost-flat.min.css" />
+	<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css">
 	<link rel="stylesheet" href="app.css" />
 </head>
 
@@ -14,13 +14,14 @@
 
 
 	<div id="coord" class="control">
-		<i class="uk-icon-crosshairs"></i>
+		<i class="fa fa-crosshairs"></i>
 	</div>
-	<div id="coord-box"></div>
+	<div id="coord-box" class="control-box"></div>
 
 	<div id="location" class="control">
-		<i class="uk-icon-location-arrow"></i>
+		<i class="fa fa-location-arrow"></i>
 	</div>
+	<div id="location-box" class="control-box"></div>
 
 	<div id="target">
 		<svg width="40" height="40">
@@ -34,8 +35,8 @@
 	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
 	<script src="http://cdn.leafletjs.com/leaflet-0.5.1/leaflet.js"></script>
 	<script src="/map/lib/L.TileLayer.Zoomify.js"></script>  
-	<script src="/map/lib/uikit-2.8.0/js/uikit.min.js"></script>
 	<script src="LUTM.js"></script>
+	<script src="UTM.js"></script>
 	<script>
 		$(function(){
 			var coord_view = false;
@@ -80,11 +81,18 @@
 			);
 
 
-			// for debug
-			map.on("dragend", map_changed); 
-			map.on("moveend", map_changed); 
+			var utm = new UTM("54N");
+
+			function _coordToLatLng(lat, lng){
+				var u = utm.latlngToUTM(lat, lng);
+				return lutm.projectToLatLng(u.x, u.y);
+			}
+
+			L.marker(_coordToLatLng(43.236468, 143.281955)).addTo(map);
+
+
+			// map event ------------------------------------------------------
 			map.on("move", map_changed); 
-			map.on("dblclick", alert("dbl")); 
 			
 			function map_changed(){
 				var c = map.getCenter();
