@@ -34,6 +34,7 @@
 
 			// getlocation ----------------------------------------------------
 			var useCompass = L.Browser.mobileWebkit;
+			var declination = 7;  // 偏角
 			var watchID;
 			var marker;
 
@@ -103,10 +104,11 @@
 
 
 			function getHeading(compass) {
-				var heading = compass.webkitCompassHeading;
+				var heading = compass.webkitCompassHeading + declination;
+				var accuracy = compass.webkitCompassAccuracy;
 				$("#arrow").attr("transform", "rotate("+heading+", 20, 20)");
 
-				$("#log").prepend("<p>"+heading+"</p>");
+				$("#log").prepend("<p>"+compass.webkitCompassHeading+", "+accuracy+"</p>");
 			}
 
 

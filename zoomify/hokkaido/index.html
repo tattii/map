@@ -4,7 +4,7 @@
 	<meta charset=utf-8 />
 	<title>Map - 上士幌</title>
 	<meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
-	<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.5.1/leaflet.css" />
+	<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
 	<link rel="stylesheet" href="/map/lib/uikit-2.8.0/css/uikit.almost-flat.min.css" />
 	<link rel="stylesheet" href="app.css" />
 </head>
@@ -33,12 +33,16 @@
 
 
 	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
-	<script src="http://cdn.leafletjs.com/leaflet-0.5.1/leaflet.js"></script>
+	<script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
 	<script src="/map/lib/L.TileLayer.Zoomify.js"></script>  
 	<script src="LUTM.js"></script>
 	<script src="UTM.js"></script>
 	<script>
 		$(function(){
+			var useCompass = L.Browser.mobileWebkit;
+			var declination = 8.2;  // 偏角
+			var watchID;
+			var marker;
 			var coord_view = false;
 
 			var center = [38.23, 138.933],
@@ -72,14 +76,12 @@
 			map.setView([-110, 80], 4);
 
 
-
-
+			// utm ------------------------------------------------------------
 			var lutm = new LUTM;
 			lutm.setProjection(
 				{x:666000 , y:4818000 , lat:-5.312, lng:5.953 },
 				{x:701000 , y:4761000 , lat:-215.689, lng:135.172 }
 			);
-
 
 			var utm = new UTM("54N");
 
@@ -88,39 +90,25 @@
 				return lutm.projectToLatLng(u.x, u.y);
 			}
 
-
-			// arrow marker ---------------------------------------------------
-			var arrow = L.divIcon({
-				className: "arrow",
-				iconSize: [40, 40],
-				iconAnchor: [20, 20],
-				html: '<svg width="40" height="40">' +
-						'<g id="arrow">' +
-						'<g transform="scale(0.625)">' +
-							'<circle cx="32" cy="32" r="12" stroke="#4591c5" fill="#1faee3" stroke-width="1"/>' +
-							'<path d="M 22 21 A 14 14 90 0 1 42 21 L 32 0 Z" fill="#1faee3" stroke-width="0"/>' +
-						'</g></g>' +
-					'</svg>'
-			});
-			L.marker(_coordToLatLng(43.236468, 143.281955), {icon: arrow}).addTo(map);
-
-			function rotate(angle) {
-				$("#arrow").attr("transform", "rotate("+angle+", 20, 20)");
+			function mapBounds(lat, lng){
+				if ( lat > 43.55 || lat < 42.9 ){
+					return false;
+				}
+				if ( lng < 143 || lng > 143.6 ){
+					return false;
+				}
+				return true;
 			}
-			rotate(45);
-
+			
+			
 			// map event ------------------------------------------------------
 			map.on("move", map_changed); 
 			
 			function map_changed(){
 				var c = map.getCenter();
-				console.log(map.getCenter());
 
 				if ( coord_view ){
 					var u = lutm.projectToUTM(c.lat, c.lng);
-
-					console.log(u);
-
 					var x = Math.round(u[0]/10).toString().split("");
 					var y = Math.round(u[1]/10).toString().split("");
 
@@ -151,16 +139,119 @@
 			});
 
 
+
 			$("#location").click(function(){
-				if ( $(this).hasClass("control-active") ){
-					$(this).removeClass("control-active");
-				}else{
-					$(this).addClass("control-active");
+				$("#location-box").animate({ width: "hide" }, "normal");
+				if (navigator.geolocation) {
+					// stop
+					if ( watchID ){
+						navigator.geolocation.clearWatch(watchID);
+						watchID = undefined;
+						if ( useCompass ){
+							window.ondeviceorientation = undefined;
+						}
+						map.removeLayer(marker);
+						marker = undefined;
+						$(this).removeClass("control-active");
+
+					// start
+					}else{
+						$("#location-box").text("測定中...").animate({ width: "show" }, "normal");
+						watchID = navigator.geolocation.watchPosition(
+							success,
+							function(e) { error(e.message) },
+							{
+								enableHighAccuracy: true, 
+								maximumAge        : 30000, 
+						    	timeout           : 27000
+							}
+						);
+						if ( useCompass ){
+							window.ondeviceorientation = getHeading;
+						}
+						$(this).addClass("control-active");
+					}
+
+				} else {
+					error("cannot get location");
 				}
 			});
 
 
-			
+			function success(position) {
+				var lat = position.coords.latitude;
+				var lng = position.coords.longitude;
+
+				if ( mapBounds(lat, lng) ){
+					$("#location-box").animate({ width: "hide" }, "normal");
+
+					if ( marker ){
+						marker.setLatLng([lat,lng]);
+
+					}else{
+					//initialize marker
+						if ( useCompass ){
+							marker = L.marker([lat, lng], {icon: arrowMarker});
+						}else{
+							marker = L.marker([lat, lng], {icon: pointMarker});
+						}
+						marker.addTo(map);
+						map.panTo([lat,lng]);
+					}
+
+				// out of map	
+				}else{
+					navigator.geolocation.clearWatch(watchID);
+					watchID = undefined;
+					if ( useCompass ){
+						window.ondeviceorientation = undefined;
+					}
+					error("out of map!");
+				}
+			}
+
+			function error(m){
+				$("#location").css("color", "#e74c3c");
+				$("#location-box").text(m);
+				$("#location-box").css("color", "#e74c3c");
+				$("#location-box").animate({ width: "show" }, "normal");
+			}
+
+
+			function getHeading(compass) {
+				var heading = compass.webkitCompassHeading + declination;
+				$("#arrow").attr("transform", "rotate("+heading+", 20, 20)");
+			}
+
+
+
+			// icon -----------------------------------------------------------
+			var arrowMarker = L.divIcon({
+				className: "arrow",
+				iconSize: [40, 40],
+				iconAnchor: [20, 20],
+				html: '<svg width="40" height="40">' +
+						'<g id="arrow">' +
+							'<g transform="scale(0.625)">' +
+								'<circle cx="32" cy="32" r="12" stroke="#4591c5" fill="#1faee3" stroke-width="1"/>' +
+								'<path d="M 22 21 A 14 14 90 0 1 42 21 L 32 0 Z" fill="#1faee3" stroke-width="0"/>' +
+						'</g></g>' +
+					'</svg>'
+			});
+
+
+			var pointMarker = L.divIcon({
+				className: "arrow",
+				iconSize: [40, 40],
+				iconAnchor: [20, 20],
+				html: '<svg width="40" height="40">' +
+						'<g transform="scale(0.625)">' +
+								'<circle cx="32" cy="32" r="12" stroke="#4591c5" fill="#1faee3" stroke-width="1"/>' +
+						'</g>' +
+					'</svg>'
+			});
+
+		
 
 			
 			
