@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Leaflet</title>
+		<meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+		<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.5.1/leaflet.css" />
+		<script src="http://cdn.leafletjs.com/leaflet-0.5.1/leaflet.js"></script>
+		<style>
+			body { margin:0; padding:0; }
+			#map { position:absolute; top:0; bottom:0; width:100%;  }
+			.arrow svg {-webkit-filter: drop-shadow(3px 3px 2px rgba(0,0,0,0.3));}
+		</style>
+	</head>
+	<body>
+		<div id="map"></div>
+
+
+		<script>
+			var map = new L.Map('map', {center: new L.LatLng(51.51, -0.11), zoom: 9});
+
+			var google = L.tileLayer(
+				'http://mt{s}.google.com/vt/lyrs=m@121&hl=ja&x={x}&y={y}&z={z}',
+				{ subdomains: [0,1,2,3] }
+			).addTo(map);
+
+
+
+			var arrow = L.divIcon({
+				className: "arrow",
+				iconSize: [64, 64],
+				iconAnchor: [32, 32],
+				html: '<svg width="48" height="48">' +
+						'<g transform="scale(0.75)">' +
+							'<circle cx="32" cy="32" r="12" stroke="#4591c5" fill="#1faee3" stroke-width="1"/>' +
+							'<path d="M 22 21 A 14 14 90 0 1 42 21 L 32 0 Z" fill="#1faee3" stroke-width="0"/>' +
+						'</g>' +
+					'</svg>'
+			});
+
+			L.marker([51.51, -0.11], {icon: arrow}).addTo(map);
+			L.marker([51.51, -0]).addTo(map);
+
+
+		</script>
