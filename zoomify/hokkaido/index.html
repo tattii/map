@@ -176,22 +176,23 @@
 			function success(position) {
 				var lat = position.coords.latitude;
 				var lng = position.coords.longitude;
+				var latlng = _coordToLatLng(lat, lng);
 
 				if ( mapBounds(lat, lng) ){
 					$("#location-box").animate({ width: "hide" }, "normal");
 
 					if ( marker ){
-						marker.setLatLng([lat,lng]);
+						marker.setLatLng(latlng);
 
 					}else{
 					//initialize marker
 						if ( useCompass ){
-							marker = L.marker([lat, lng], {icon: arrowMarker});
+							marker = L.marker(latlng, {icon: arrowMarker});
 						}else{
-							marker = L.marker([lat, lng], {icon: pointMarker});
+							marker = L.marker(latlng, {icon: pointMarker});
 						}
 						marker.addTo(map);
-						map.panTo([lat,lng]);
+						map.panTo(latlng);
 					}
 
 				// out of map	
