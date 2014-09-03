@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Cartogram</title>
+	<link rel="stylesheet" href="/map/lib/uikit-2.8.0/css/uikit.almost-flat.min.css" />
+	<script src="http://d3js.org/d3.v3.min.js"></script>
+	<script src="/map/lib/cartogram/cartogram.js"></script>
+	<script src="/map/lib/cartogram/lib/topojson.js"></script>
+	<script src="/map/lib/cartogram/lib/colorbrewer.js"></script>
+
+	<style>
+		body { margin:0; padding:0; }
+		#map-container { position:absolute; top:0; bottom:0; width:100%; }
+		#map {
+			display: block;
+			position: absolute;
+			background: #fff;
+			width: 100%;
+			height: 100%;
+			margin: 0;
+		}
+		#button0 {
+			position: absolute;
+			width: 100px;
+			top: 10px; left: 10px;;
+		}
+		#button1 {
+			position: absolute;
+			width: 100px;
+			top: 50px; left: 10px;
+		}
+		#button2 {
+			position: absolute;
+			width: 100px;
+			top: 90px; left: 10px;
+		}
+		#button3 {
+			position: absolute;
+			width: 100px;
+			top: 130px; left: 10px;
+		}
+	</style>
+</head>
+
+
+<body>
+	<div id="map-container">
+		<svg id="map"></svg>
+	</div>
+
+	<button id="button0" class="uk-button uk-button-primary">Base Map</button>
+	<button id="button1" class="uk-button uk-button-primary">Data1</button>
+	<button id="button2" class="uk-button uk-button-primary">Data2</button>
+	<button id="button3" class="uk-button uk-button-primary">Data3</button>
+
+	<script>
+		var width = 960,
+		    height = 500;
+
+		var stage = d3.select("#map");
+
+		var map = stage.append("g")
+			.selectAll("path");
+
+		var proj = d3.geo.mercator()
+			.center([134, 40])
+			.translate([width/2, height/2])
+			.scale(1700);
+
+		var topology;
+		var geometries;
+		var carto_features;
+		var base_feature, base_path;
+		var pref_data;
+
+
+		var carto = d3.cartogram()
+			.projection(proj)
+			.properties(function (d) {
+				return d.properties;
+			});
+
+		var colors = colorbrewer.RdYlBu[3]
+			.reverse()
+			.map(function(rgb) { return d3.hsl(rgb); });
+
+		var color = d3.scale.linear()
+			.range(colors)
+			.domain([100,150,200]);
+
+
+		// event --------------------------------------------------------------
+		d3.select("#button0")
+			.on("click", function (){
+				drawBaseMap();
+			});
+		d3.select("#button1")
+			.on("click", function (){
+				draw(pref_data.data1);
+			});
+		d3.select("#button2")
+			.on("click", function (){
+				draw(pref_data.data2);
+			});
+		d3.select("#button3")
+			.on("click", function (){
+				draw(pref_data.data3);
+			});
+
+		d3.json("data.json", function (data) {
+			pref_data = data;
+		});
+
+
+
+		// draw base map ------------------------------------------------------
+		d3.json("/map/geodata/japan_prefecture.topojson", function (data) {
+			topology = data;
+			geometries = topology.objects.ken.geometries;
+
+			base_features = carto.features(topology, geometries);
+			base_path = d3.geo.path().projection(proj);
+
+			map = map.data(base_features)
+				.enter()
+				.append("path")
+				.attr({
+					fill: "#44aaee",
+					stroke: "#fff",
+					"stroke-width": 1
+				})
+				.attr("class", function(d){  return d.properties["ObjName_1"] })
+				.attr("d", base_path);
+		});
+		
+
+		function drawBaseMap() {
+			map.data(base_features);
+			map.transition()
+				.duration(750)
+				.ease("linear")
+				.attr("fill", "#44aaee")
+				.attr("d", base_path);
+		}
+
+
+
+		function draw(data) {
+			carto.value(function (d) {
+				return data[ d.properties["JIS-CODE"]-1 ];
+			});
+
+		//	if (carto_features == undefined){
+				carto_features = carto(topology, geometries).features;
+
+			map.data(carto_features);
+			map.transition()
+				.duration(750)
+				.ease("linear")
+				.attr("fill", function(d) {
+					return color( data[ d.properties["JIS-CODE"]-1 ] );
+				})
+				.attr("d", carto.path);
+		}
+
+		function value(d){
+			if (d.properties["JIS-CODE"]=="1") {
+				return 200;
+			}else{
+				return 100;
+			}
+		}
+
+
+	</script>
+
+</body>
+</html>
