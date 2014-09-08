@@ -115,7 +115,7 @@
 
 
 		// draw base map ------------------------------------------------------
-		d3.json("/map/geodata/japan_prefecture.topojson", function (data) {
+		d3.json("/map/geodata/japan_prefecture_noisland.topojson", function (data) {
 			topology = data;
 			geometries = topology.objects.ken.geometries;
 
@@ -151,8 +151,7 @@
 				return data[ d.properties["JIS-CODE"]-1 ];
 			});
 
-		//	if (carto_features == undefined){
-				carto_features = carto(topology, geometries).features;
+			carto_features = carto(topology, geometries).features;
 
 			map.data(carto_features);
 			map.transition()
@@ -162,14 +161,6 @@
 					return color( data[ d.properties["JIS-CODE"]-1 ] );
 				})
 				.attr("d", carto.path);
-		}
-
-		function value(d){
-			if (d.properties["JIS-CODE"]=="1") {
-				return 200;
-			}else{
-				return 100;
-			}
 		}
 
 
