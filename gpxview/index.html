@@ -77,8 +77,6 @@
 				layers: [ googleHybrid ]
 			});
 
-
-
 			$("#file").change(function(e){
 				var file = e.target.files[0];
 				var reader = new FileReader;
@@ -150,6 +148,7 @@
 					max_speed = (speed > max_speed) ? speed : max_speed;
 
 					t_i += 9 * 3600 * 1000;
+					track[i].date = t_i;
 					data_alt.push([t_i, Math.round(track[i].altitude) ]);
 					data_speed.push([t_i, Math.round(speed*10)/10]);
 				}
@@ -174,19 +173,20 @@
 				$("#max-speed").html( Math.round(max_speed*10) /10 + "<span>m/s</span>");
 				$("#min-alt").html( Math.round(min_alt) + "<span>m</span>");
 				$("#max-alt").html( Math.round(max_alt) + "<span>m</span>");
+				
 
-				drawChart(data_alt, data_speed);
+				drawChart(data_alt, data_speed, track);
 			}
 
 
 
 			//-----------------------------------------------------------------
 			var grad = [
-				{ value:0.00, r:0, g:0, b:255 },
-				{ value:0.25, r:0, g:255, b:255 },
-				{ value:0.50, r:0, g:255, b:0 },
-				{ value:0.75, r:255, g:255, b:0 },
-				{ value:1.00, r:255, g:0, b:0 },
+				{ value:0.00, r:0,   g:0,   b:255 },
+				{ value:0.25, r:0,   g:255, b:255 },
+				{ value:0.50, r:0,   g:255, b:0   },
+				{ value:0.75, r:255, g:255, b:0   },
+				{ value:1.00, r:255, g:0,   b:0   }
 			];
 
 			function gradient(x) {
@@ -216,7 +216,10 @@
 
 
 			//-----------------------------------------------------------------
-			function drawChart(data_alt, data_speed) {
+			function drawChart(data_alt, data_speed, track) {
+				var marker = L.marker();
+
+
 				$('#chart').highcharts({
 					chart: {
 						zoomType: 'x'
@@ -280,7 +283,32 @@
 							enabled: false
 						},
 						data: data_speed
-					}]
+					}],
+
+					plotOptions: {
+						series: {
+							point: {
+								events: {
+									mouseOver: function() {
+										var t = this.x;
+										for (var i = 0; i < track.length-1; i++){
+											if ( track[i].date == t ){
+												break;
+											}
+										}
+										var target = track[i];
+
+										marker.setLatLng([target.lat, target.lng]);
+										marker.addTo(map);
+									},
+									mouseOut: function() {
+										map.removeLayer(marker);
+									}
+								}
+							}
+						}
+					}
+
 				});
 			}
 
