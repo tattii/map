@@ -1,0 +1,103 @@
+body { margin:0; padding:0; -webkit-touch-callout:none; }
+
+#container {
+	width: 100%; height: 100%;
+}
+
+
+#plane {
+	position: absolute;
+	top: 20px; left: 20px;
+	width: 50px; height: 50px;
+	border: none;
+	z-index: 10000;
+	font-size: 24px;
+	text-align: center;
+	padding-top: 7px;
+	background: #00BCD4;
+	color: #fff;
+	box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35);
+}
+
+#file-name {
+	position: absolute;
+	top: 38px; left: 80px;
+	z-index: 100;
+	font-size: 20px;
+	color: #fff;
+}
+
+
+#map {
+	position: absolute;
+	top: 0; bottom: 0;
+	width: 100%;
+}
+
+#bottom {
+	position: absolute;
+	bottom: 0; height: 0;
+	width: 100%;
+	box-shadow: 0 -13px 10px -10px rgba(0, 0, 0, 0.35);
+}
+
+#summary {
+	position: absolute;
+	left: 0; width: 220px;
+}
+
+#chart-container {
+	position: absolute;
+	left: 240px; right: 0;
+	padding-top: 10px;
+}
+
+#summary table {
+	margin-top: 4px;
+	margin-bottom: 0;
+}
+
+
+#summary tr {
+	line-height: 21px;
+}
+
+#summary td, #summary th {
+	font-size: 12px;
+	padding: 3px 15px;
+}
+
+#summary td {
+	text-align: right;
+}
+
+#summary table span {
+	font-size: 10px;
+	padding-left: 0.2em;
+}
+
+#chart {
+	width: 100%;
+	height: 190px;
+}
+
+
+#modal-dialog {
+	position: absolute;
+	top: 50px; left: 50px;
+	margin: 0;
+	width: 400px;
+}
+
+#file {
+	display: none;
+}
+
+#modal-dialog h3 {
+	margin-left: 10px;
+}
+
+#modal-dialog button {
+	margin-left: 220px;
+}
+

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Cartogram</title>
+	<script src="http://d3js.org/d3.v3.min.js"></script>
+	<script src="/map/lib/cartogram/cartogram.js"></script>
+	<script src="/map/lib/cartogram/lib/topojson.js"></script>
+	<script src="/map/lib/cartogram/lib/colorbrewer.js"></script>
+
+	<style>
+		body { margin:0; padding:0; }
+		#map-container { position:absolute; top:0; bottom:0; width:100%; }
+		#map {
+			display: block;
+			position: absolute;
+			background: #fff;
+			width: 100%;
+			height: 100%;
+			margin: 0;
+		}
+		h1 {
+			position: absolute;
+			z-index: 100;
+		}
+	</style>
+</head>
+
+
+<body>
+	<h1>2013 みかん収穫量</h1>
+	<div id="map-container">
+		<svg id="map"></svg>
+	</div>
+
+	<script>
+		var width = 960,
+		    height = 500;
+
+		var stage = d3.select("#map");
+
+		var map = stage.append("g")
+			.selectAll("path");
+
+		var proj = d3.geo.mercator()
+			.center([134, 40])
+			.translate([width/2, height/2])
+			.scale(1700);
+
+		var topology;
+		var geometries;
+		var carto_features;
+
+
+		var carto = d3.cartogram()
+			.projection(proj)
+			.properties(function (d) {
+				return d.properties;
+			});
+
+		var colors = colorbrewer.RdYlBu[3]
+			.reverse()
+			.map(function(rgb) { return d3.hsl(rgb); });
+
+		var color = d3.scale.linear()
+			.range(colors)
+			.domain([1000,30000,170000]);
+
+
+
+		// draw base map ------------------------------------------------------
+		d3.json("/map/geodata/japan_prefecture_noisland.topojson", function (data) {
+			topology = data;
+			geometries = topology.objects.ken.geometries;
+
+			var features = carto.features(topology, geometries);
+			var path = d3.geo.path().projection(proj);
+
+			map = map.data(features)
+				.enter()
+				.append("path")
+				.attr({
+					fill: "#44aaee",
+					stroke: "#fff",
+					"stroke-width": 1
+				})
+				.attr("class", function(d){  return d.properties["ObjName_1"] })
+				.attr("d", path);
+
+				draw();
+		});
+		
+
+		function draw() {
+			carto.value(function (d) {
+				return pref_data[ d.properties["JIS-CODE"]-1 ];
+			});
+
+			carto_features = carto(topology, geometries).features;
+
+			map.data(carto_features);
+			map.transition()
+				.duration(750)
+				.ease("linear")
+				.attr("fill", function(d) {
+					return color( pref_data[ d.properties["JIS-CODE"]-1 ] );
+				})
+				.attr("d", carto.path);
+		}
+
+
+		// 2013 みかん収穫量 (農林水産省)
+		// http://www.e-stat.go.jp/SG1/estat/Xlsdl.do?sinfid=000024947688
+	   	var pref_data = [
+			1000,1000,1000,1000,1000,1000,1000,1000,1000,1000,
+			1000,1440,1000,24600,1000,1000,1000,1000,1000,1000,
+			1000,121800,28200,22000,10000,1000,14200,2460,1000,168900,
+			1000,1000,1000,42300,12700,13900,15900,137800,7340,26500,
+			53000,60900,91600,16200,13000,15700,1000
+		];
+
+	</script>
+
+</body>
+</html>
