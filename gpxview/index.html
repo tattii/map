@@ -2,7 +2,7 @@
 <html>
 <head>
 	<meta charset=utf-8 />
-	<title></title>
+	<title>GPX view</title>
 	<meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
 	<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
 	<link rel="stylesheet" href="/map/lib/uikit-2.8.0/css/uikit.almost-flat.min.css" />
@@ -11,57 +11,65 @@
 
 <body>
 	<div id="container">
-		<div id="main">
-			<div id="map"></div>
-			<div id="main-bottom">
+		<div id="plane" class="uk-icon-button uk-icon-paper-plane-o"></div>
+		<div id="file-name"></div>
+
+		<div id="map"></div>
+		<div id="bottom">
+			<div id="chart-container">
 				<div id="chart"></div>
 			</div>
-		</div>
-		<div id="side">
-			<div id="side-top">
-				<input type="file" id="file"  />
-			</div>
-			<div id="side-main">
-				<table class="uk-table">
+
+			<div id="summary">
+				<table class="uk-table uk-table-hover">
 					<tr>
-						<td>Time</td>
+						<th>Time</th>
 						<td id="time"></td>
 					</tr>
 					<tr>
-						<td>Track</td>
+						<th>Track</th>
 						<td id="track"></td>
 					</tr>
 					<tr>
-						<td>Distance</td>
+						<th>Distance</th>
 						<td id="distance"></td>
 					</tr>
 					<tr>
-						<td>Avg Speed</td>
+						<th>Avg Speed</th>
 						<td id="avg-speed"></td>
 					</tr>
 					<tr>
-						<td>Max Speed</td>
+						<th>Max Speed</th>
 						<td id="max-speed"></td>
 					</tr>
 					<tr>
-						<td>Min Altitude</td>
+						<th>Min Altitude</th>
 						<td id="min-alt"></td>
 					</tr>
 					<tr>
-						<td>Max Altitude</td>
+						<th>Max Altitude</th>
 						<td id="max-alt"></td>
 					</tr>
 				</table>
-			</div>
 
+			</div>
 		</div>
 	</div>
 
+	<div id="modal" class="uk-modal">
+		<div class="uk-modal-dialog" id="modal-dialog">
+			<a class="uk-modal-close uk-close"></a>
+			<h3>GPXファイルを選択して下さい</h3>
+			<button class="uk-button uk-button-primary" type="button" id="file-button">ファイルを選択</button>
+			<input type="file" id="file" />
+		</div>
+	</div>
 
 
 	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
 	<script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
 	<script src="http://code.highcharts.com/highcharts.js"></script>
+	<script src="/map/lib/uikit-2.8.0/js/uikit.min.js"></script>
 	<script>
 		$(function(){
 
@@ -76,19 +84,35 @@
 				zoom: 5,
 				layers: [ googleHybrid ]
 			});
+			map.zoomControl.setPosition("bottomleft");
+
+			var modal = $.UIkit.modal("#modal");
+			modal.show();
+
 
 			$("#file").change(function(e){
 				var file = e.target.files[0];
 				var reader = new FileReader;
+				$("#file-button").text("読み込み中.......");
 
 				reader.onload = function(e) {
 					var result = e.target.result;
+					modal.hide();
+					$("#file-name").text(file.name);
 					drawGPX(result);
 				};
 
 				reader.readAsText(file);
 			});
 
+			$("#file-button").on("click", function(){
+				$("#file").click();
+			});
+
+			$("#plane").on("click", function(){
+				$("#file-button").text("ファイルを選択");
+				modal.show();
+			});
 
 
 
@@ -97,23 +121,38 @@
 				var track = [],
 					min_alt, max_alt;
 
-				$(gpx).find("trkpt").each(function() {
-					var altitude = parseFloat( $(this).find("ele").text() );
-					min_alt = (min_alt == undefined) ? altitude : (min_alt > altitude) ? altitude : min_alt;
-					max_alt = (max_alt == undefined) ? altitude : (max_alt < altitude) ? altitude : max_alt;
+				if ( $(gpx).find("trkpt").length == 0 ){
+					alert("ファイルを読み込めません。");
+					return;
 
-					track.push({
-						lat: parseFloat( $(this).attr("lat")),
-						lng: parseFloat( $(this).attr("lon") ),
-						altitude: altitude,
-						time: $(this).find("time").text()
+				}else{
+					$("#map").css({ bottom: "200px" });
+					$("#bottom").css({ height: "200px" });
+
+					map.eachLayer(function(layer){
+						map.removeLayer(layer);	
+					});
+					map.addLayer(googleHybrid);
+
+					$(gpx).find("trkpt").each(function() {
+						var altitude = parseFloat( $(this).find("ele").text() );
+						min_alt = (min_alt == undefined) ? altitude : (min_alt > altitude) ? altitude : min_alt;
+						max_alt = (max_alt == undefined) ? altitude : (max_alt < altitude) ? altitude : max_alt;
+
+						track.push({
+							lat: parseFloat( $(this).attr("lat")),
+							lng: parseFloat( $(this).attr("lon") ),
+							altitude: altitude,
+							time: $(this).find("time").text()
+						});
+
 					});
 
-				});
-
-				drawPath(track, min_alt, max_alt);
+					drawPath(track, min_alt, max_alt);
+				}
 			}
 
+			function pad(n) { return n<10 ? '0'+n : n; }
 
 			function drawPath(track, min_alt, max_alt) {
 				var path2 = L.polyline([[ track[0].lat, track[1].lng ]], { wight: 0 });
@@ -144,6 +183,12 @@
 					var t = Date.parse(track[i+1].time) - t_i;
 					var speed = d / t * 1000;
 
+					var date = new Date(track[i].time);
+					path.bindPopup(
+						pad(date.getHours()) + ":" + pad(date.getMinutes()) + ":" + pad(date.getSeconds()) + "<br>" +
+						"altitude: " + Math.round(track[i].altitude) + " m<br>" +
+						"spped:" + Math.round(speed*10)/10 + " m/s"
+					);
 					track_dis += d;
 					max_speed = (speed > max_speed) ? speed : max_speed;
 
@@ -153,16 +198,15 @@
 					data_speed.push([t_i, Math.round(speed*10)/10]);
 				}
 
-				map.fitBounds(path2.getBounds());
+				map.fitBounds(path2.getBounds(), { paddingBottomRight: [0, 200] });
 
 				// summary
 				var last = track.length - 1;
 				var distance = L.latLng([ track[0].lat, track[0].lng ]).distanceTo([ track[last].lat, track[last].lng ]);
 				var time = Date.parse(track[last].time) - Date.parse(track[0].time);
 				var t = new Date(time);
-				var avg_speed = track_dis / time;
+				var avg_speed = track_dis / time * 1000;
 
-				function pad(n) { return n<10 ? '0'+n : n; }
 
 				console.log(last);
 
@@ -253,7 +297,7 @@
 					}],
 					legend: {
 						enabled: true,
-						align: "right",
+						align: "left",
 						layout: "vertical",
 						verticalAlign: "middle"
 					},
@@ -267,7 +311,7 @@
 
 					series: [{
 						type: 'line',
-						name: 'altitude',
+						name: 'altitude(m)',
 						color: "#3498db",
 						yAxis: 0,
 						marker: {
@@ -276,7 +320,7 @@
 						data: data_alt
 					},{
 						type: 'line',
-						name: 'speed',
+						name: 'speed(m/s)',
 						color: "#e74c3c",
 						yAxis: 1,
 						marker: {
