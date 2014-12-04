@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset=utf-8 />
+	<title>GPX view</title>
+	<meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+</head>
+
+<body>
+	<div id="container">
+		<input type="file" id="file" />
+		<div id="output"></div>
+	</div>
+
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+	<script>
+		$(function(){
+
+			$("#file").change(function(e){
+				var file = e.target.files[0];
+				var reader = new FileReader;
+
+				reader.onload = function(e) {
+					var result = e.target.result;
+					parseGPX(result);
+				};
+
+				reader.readAsText(file);
+			});
+
+			//-----------------------------------------------------------------
+			function parseGPX(gpx){
+				var track = [];
+
+				if ( $(gpx).find("trkpt").length == 0 ){
+					alert("ファイルを読み込めません。");
+					return;
+
+				}else{
+					$(gpx).find("trkpt").each(function() {
+						var alt = parseFloat( $(this).find("ele").text() );
+						var time =  Date.parse( $(this).find("time").text() );
+
+						track.push([
+							parseFloat( $(this).attr("lat")),
+							parseFloat( $(this).attr("lon") ),
+							Math.round(alt),
+							time / 1000
+						]);
+					});
+
+					var json = {
+						name: "2014-11-30 安曇川.gpx",
+						track: track
+					};
+
+					$("#output").text(JSON.stringify(json));
+				}
+			}
+
+
+
+		});
+	</script>
+
+</body>
+</html>
