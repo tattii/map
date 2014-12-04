@@ -89,6 +89,12 @@
 			var modal = $.UIkit.modal("#modal");
 			modal.show();
 
+			if ( L.Browser.mobile ){
+				$("#modal-dialog").html("モバイルブラウザには対応していませんm(__)m")
+					.css({ left: "10px", width: "100%" });
+				$("#bottom").hide();
+			}
+
 
 			$("#file").change(function(e){
 				var file = e.target.files[0];
